@@ -1,5 +1,7 @@
 ## QUICK START
-1) Download the data from the following link: 
+1) Clone the repository and change directory to the CS597PSL_Coding1 folder
+
+2) Download the data from the following link: 
 
 https://archive.ics.uci.edu/dataset/81/pen+based+recognition+of+handwritten+digits
 
@@ -8,7 +10,7 @@ https://archive.ics.uci.edu/dataset/81/pen+based+recognition+of+handwritten+digi
 3) Create a virtual environment, activate it, install required packaged:
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 
 4) Run main.py:
 
