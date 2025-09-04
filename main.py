@@ -72,7 +72,9 @@ def main():
     print(f"\nOptimal k = {best_k} with test error = {best_err:.4f}")
     print(f"Degrees of freedom for k={best_k}: {len(X_train)}/{best_k} = {dof_best:.1f}")
 
-    # 4) Plot
+    '''
+    1) a) 
+    '''
     ks = list(K_RANGE)
 
     n_train_total = len(X_train)
@@ -88,6 +90,18 @@ def main():
         k_opt=best_k,
         title="kNN vs Linear Regression"
     )
+
+    '''
+    1) b) The plot does match our intuition of the bias-variance tradeoff. We can see that the training error 
+    is very low as expected; however, once we generalize to unseen data we get the typical U shape curve as seen in lecture. The left
+    side of the plot is the "most complex" model with most degrees of freedom so we have low bias but high variance.
+    On the right side of the plot we have the "less complex" models which have higher bias and lower variance. Note that in our plot we plotted in order of increasing k value.
+    The optimal k value is k = 2 with 780 degrees of freedom calculated by taking n=1560 and divding it by k=2. The training
+    error for this value of k is about 0 whereas the testing error is 0.0069. 
+
+    '''
+
+    
 
 if __name__ == "__main__":
     main()
