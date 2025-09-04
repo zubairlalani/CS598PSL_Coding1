@@ -1,9 +1,14 @@
 # import pandas as pd
-from utils import preprocess_data, convert_to_binary
+from utils import preprocess_data, convert_to_binary, create_plot, misclassification_err
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+
 def main():
+    FILTER_DIGITS = (0, 2) # Last 2 digits of Zubair's UIN
+    K_RANGE = range(1, 21)
     # print("Hello World")
     # Setting up paths to train/test data
     DATAFOLDER = "pen+based+recognition+of+handwritten+digits/"
@@ -16,50 +21,73 @@ def main():
     # Reading in the data
     train_data = np.loadtxt(train_path, delimiter=",")
     test_data = np.loadtxt(test_path, delimiter=",")
-    # print(train_data.shape)
-    # print(train_data[:5])   # first 5 rows
+    n_samples = len(train_data)
 
     X_train = train_data[:, 0:16]
     y_train = train_data[:, 16]
-
     X_test = test_data[:, 0:16]
     y_test = test_data[:, 16]
+    X_train, y_train = preprocess_data(X_train, y_train, FILTER_DIGITS)
+    X_test, y_test = preprocess_data(X_test, y_test, FILTER_DIGITS)
 
-    print("Training data shapes: ")
-    print(X_train.shape)
-    print(y_train.shape)
+    print(len(X_train))
+    print(len(X_test))
+    d0, d1 = FILTER_DIGITS
+    threshold = 0.5 * (d0 + d1)  # midpoint between the two digits
 
-    print("Testing data shapes: ")
-    print(X_test.shape)
-    print(y_test.shape)
+    lr = LinearRegression()
+    lr.fit(X_train, y_train)
 
-    
-    X_train, y_train = preprocess_data(X_train, y_train, [0, 2])
-    X_test, y_test = preprocess_data(X_test, y_test, [0, 2])
+    yhat_train_cont = lr.predict(X_train)
+    yhat_test_cont  = lr.predict(X_test)
 
-    print("Preprocessed Training data shapes: ")
-    print(X_train.shape)
-    print(y_train.shape)
+    yhat_train_lr = np.where(yhat_train_cont >= threshold, d1, d0)
+    yhat_test_lr  = np.where(yhat_test_cont  >= threshold, d1, d0)
 
-    print("Preprocessed Testing data shapes: ")
-    print(X_test.shape)
-    print(y_test.shape)
+    lr_train_err = misclassification_err(y_train, yhat_train_lr)
+    lr_test_err  = misclassification_err(y_test,  yhat_test_lr)
+    print(f"[Linear Regression] train error = {lr_train_err:.4f}, test error = {lr_test_err:.4f}")
 
-    reg = LinearRegression().fit(X_train, y_train)
-    res = reg.score(X_train, y_train)
-    print("Linear Regression Score: ", res)
+    knn_train_errs = []
+    knn_test_errs  = []
 
-    predicted_labels = reg.predict(X_test)
-    print(predicted_labels)
-    y_res = convert_to_binary(predicted_labels)
-    print(y_res)
-    print("Unique y labels: ", np.unique(y_res)) # confirming that we only have either 0 or 2
+    for k in K_RANGE:
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(X_train, y_train)
+        yhat_train_knn = knn.predict(X_train)
+        yhat_test_knn  = knn.predict(X_test)
+        tr_err = misclassification_err(y_train, yhat_train_knn)
+        te_err = misclassification_err(y_test,  yhat_test_knn)
+        knn_train_errs.append(tr_err)
+        knn_test_errs.append(te_err)
+        print(f"k={k:2d} train err = {tr_err:.4f} | test err = {te_err:.4f}")
 
-    # neigh = KNeighborsClassifier(n_neighbors=3)
-    # neigh.fit(X_train, y_train)
-    
+    # Find optimal k
+    knn_test_errs = np.array(knn_test_errs)
+    best_idx = int(np.argmin(knn_test_errs))
+    best_k   = list(K_RANGE)[best_idx]
+    best_err = float(knn_test_errs[best_idx])
+    dof_best = len(X_train) / best_k
 
+    print(f"\nOptimal k = {best_k} with test error = {best_err:.4f}")
+    print(f"Degrees of freedom for k={best_k}: {len(X_train)}/{best_k} = {dof_best:.1f}")
 
-    
+    # 4) Plot
+    ks = list(K_RANGE)
+
+    n_train_total = len(X_train)
+
+    create_plot(
+        np.array(ks),
+        knn_train_errs,
+        knn_test_errs,
+        n_train_total,
+        lr_train_err,
+        lr_test_err,
+        df_lr=3,
+        k_opt=best_k,
+        title="kNN vs Linear Regression"
+    )
+
 if __name__ == "__main__":
     main()
