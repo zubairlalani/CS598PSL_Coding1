@@ -48,5 +48,7 @@ def mse(test, pred):
 
 ypred = myKNN(x_train, y_train, x_test, 4)
 print(mse(y_test, ypred))
+ypred = myKNN(x_train, y_train, x_test, 5)
+print(mse(y_test, ypred))
 
 
